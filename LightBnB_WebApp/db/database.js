@@ -18,7 +18,7 @@ const db = function($) {
 const error = msg => err => console.log(msg ,err.message);
 
 //if exists then return first object element, otherwise return null.  
-const getFirst = res => res[0] ? res.rows[0] : null;
+const getFirst = res => res.rows[0] ? res.rows[0] : null;
 //NOT MEANT FOR USER INPUT, INTERNAL ONLY
 const selectAll = config => `SELECT * FROM ${config.table} WHERE ${config.property} = $1`
 
