@@ -14,13 +14,13 @@ const db = function($) {
   })
 }(process.env);
 
-//could switch to a persistent log in future
-const error = err => console.log(err.message);
+//could switch to a persistent log in future, A little curry action
+const error = msg => err => console.log(msg ,err.message);
 
 //if exists then return first object element, otherwise return null.  
 const getFirst = res => res[0] ? res.rows[0] : null;
-
-const selectAll = 'SELECT * FROM $2 WHERE p = $1'
+//NOT MEANT FOR USER INPUT, INTERNAL ONLY
+const selectAll = config => `SELECT * FROM ${config.table} WHERE ${config.property} = $1`
 
 /**
  * Get a single user from the database given their email.
@@ -29,9 +29,9 @@ const selectAll = 'SELECT * FROM $2 WHERE p = $1'
  */
 const getUserWithEmail = function (email) {
   return db
-    .query(selectAll, [email, 'users'])
+    .query(selectAll({table: 'users', property: 'email'}), [email])
     .then(getFirst)
-    .catch(error);
+    .catch(error('getUserWithEmail'));
 };
 
 /**
@@ -41,9 +41,9 @@ const getUserWithEmail = function (email) {
  */
 const getUserWithId = function (id) {
   return db
-    .query(selectAll, [id, 'users'])
+    .query(selectAll({table: 'user', property: 'id'}), [id])
     .then(getFirst)
-    .catch(error);
+    .catch(error('getUserWithId'));
 };
 
 /**
@@ -52,10 +52,9 @@ const getUserWithId = function (id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
+  return db
+    .query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *', [user.name, user.email, user.password])
+    .catch(error);
 };
 
 /// Reservations
