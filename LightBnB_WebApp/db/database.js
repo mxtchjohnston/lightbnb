@@ -19,6 +19,7 @@ const error = msg => err => console.log(msg ,err.message);
 
 //if exists then return first object element, otherwise return null.  
 const getFirst = res => res.rows[0] ? res.rows[0] : null;
+
 //NOT MEANT FOR USER INPUT, INTERNAL ONLY
 const selectAll = config => `SELECT * FROM ${config.table} WHERE ${config.property} = $1`
 
@@ -54,7 +55,7 @@ const getUserWithId = function (id) {
 const addUser = function (user) {
   return db
     .query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *', [user.name, user.email, user.password])
-    .catch(error);
+    .catch(error('addUser'));
 };
 
 /// Reservations
@@ -65,7 +66,15 @@ const addUser = function (user) {
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  const query = `SELECT reservations.*, properties.* 
+    FROM reservations 
+    JOIN users ON guest_id = users.id
+    JOIN properties ON property_id = properties.id 
+    WHERE guest_id = $1 LIMIT $2`
+  return db
+    .query(query, [guest_id, limit])
+    .then(res => res.rows)
+    .catch(error('get all reservationd'));
 };
 
 /// Properties
