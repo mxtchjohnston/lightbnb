@@ -1,7 +1,20 @@
+require('dotenv').config();
 const properties = require("./json/properties.json");
 const users = require("./json/users.json");
 
-/// Users
+const { Pool } = require('pg');
+
+//immediate invocation pattern
+const db = function($) {
+  return new Pool({
+    user:     $.DB_USER,
+    password: $.DB_PASS,
+    host:     $.DB_HOST,
+    database: $.DB_BASE
+  })
+}(process.env);
+
+console.log(db);
 
 /**
  * Get a single user from the database given their email.
