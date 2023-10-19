@@ -14,6 +14,13 @@ const db = function($) {
   })
 }(process.env);
 
+//could switch to a persistent log in future
+const error = err => console.log(err.message);
+
+//if exists then return first object element, otherwise return null.  
+const getFirst = res => res[0] ? res.rows[0] : null;
+
+const selectAll = 'SELECT * FROM $2 WHERE p = $1'
 
 /**
  * Get a single user from the database given their email.
@@ -21,14 +28,10 @@ const db = function($) {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function (email) {
-  let resolvedUser = null;
-  for (const userId in users) {
-    const user = users[userId];
-    if (user && user.email.toLowerCase() === email.toLowerCase()) {
-      resolvedUser = user;
-    }
-  }
-  return Promise.resolve(resolvedUser);
+  return db
+    .query(selectAll, [email, 'users'])
+    .then(getFirst)
+    .catch(error);
 };
 
 /**
@@ -37,7 +40,10 @@ const getUserWithEmail = function (email) {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function (id) {
-  return Promise.resolve(users[id]);
+  return db
+    .query(selectAll, [id, 'users'])
+    .then(getFirst)
+    .catch(error);
 };
 
 /**
@@ -75,7 +81,7 @@ const getAllProperties = function (options, limit = 10) {
   return db
     .query('SELECT * FROM properties LIMIT $1', [limit])
     .then(res => res.rows)
-    .catch(err => console.log(err.message));
+    .catch(error);
 };
 
 /**
