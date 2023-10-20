@@ -86,43 +86,58 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
+  let clause = 'WHERE';
   let queryParams = [];
   let queryString = `
   SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
-  JOIN property_reviews ON properties.id = property_id`;
+  JOIN property_reviews ON properties.id = property_id
+  `;
 
   if (options.owner_id) {
     queryParams.push(`${options.owner_id}`);
-    queryString += `WHERE owner_id = $${queryParams.length}`;
+    queryString += `WHERE owner_id = $${queryParams.length}
+    `;
+    clause = 'AND'
   }
 
   if (options.city) {
     queryParams.push(`%${options.city}%`);
-    queryString += `WHERE city LIKE $${queryParams.length}`;
+    queryString += `${clause} city LIKE $${queryParams.length}
+    `;
+    clause = 'AND';
   }
 
   if (options.minimum_price_per_night) {
     queryParams.push(Number(options.minimum_price_per_night) * 100);
-    queryString += `WHERE minimum_price_per_night >= $${queryParams.length}`;
+    queryString += `${clause} cost_per_night >= $${queryParams.length}
+    `;
+    clause = 'AND';
   }
 
   if (options.maximum_price_per_night) {
     queryParams.push(Number(options.maximum_price_per_night) * 100);
-    queryString += `WHERE maximum_price_per_night <= $${queryParams.length}`;
+    queryString += `${clause} cost_per_night <= $${queryParams.length}
+    `;
+    clause = 'AND';
   }
+
+  queryString += 'GROUP BY properties.id\n'
 
   if (options.minimum_rating) {
     queryParams.push(options.minimum_rating);
-    queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length}`;
+    queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length}
+    `;
   }
 
   queryParams.push(limit);
   queryString += `
-  GROUP BY properties.id
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};
   `;
+  
+  // console.log('params', queryParams);
+  // console.log('string', queryString);
 
   return db
     .query(queryString, queryParams)
